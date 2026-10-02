@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniSubs - Universal Streaming Subtitles & AI Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo" id="brand-logo">CC</div>
+        <div class="brand-info">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="brand-title">OMNISUBS</span>
+            <span class="platform-badge" id="platform-badge">Universal</span>
+          </div>
+          <span class="brand-version">v0.2.0 • Universal AI</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="master-power-wrap" id="master-power-wrap" title="总开关: 开启或关闭字幕扩展 (快捷键 Alt+Q)">
+          <span class="master-power-text" id="master-power-text">已开启</span>
+          <label class="master-switch">
+            <input type="checkbox" id="master-power-toggle" checked>
+            <span class="master-slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="connection-status" title="Connection status">
+          <span class="status-dot"></span>
+          <span class="status-text">Detecting...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Disabled State Alert Banner -->
+    <div class="disabled-banner" id="disabled-banner" style="display: none;">
+      <span class="disabled-banner-icon">⏸</span>
+      <span class="disabled-banner-text">字幕插件已关闭 (点击右上角开关或按 Alt+Q 重新开启)</span>
+    </div>
+
+    <!-- Active Media Card -->
+    <section class="media-card" id="media-card">
+      <div class="media-header">
+        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+          <h2 class="media-title" id="media-title">No Video Detected</h2>
+          <button class="btn-icon" id="btn-edit-title" title="修改或微调片名" style="background: none; border: none; cursor: pointer; font-size: 13px; color: var(--text-secondary); padding: 0 2px;">✏️</button>
+        </div>
+        <span class="media-badge" id="media-badge">Idle</span>
+      </div>
+
+      <!-- Quick Title Editor Form -->
+      <div class="title-edit-box" id="title-edit-box" style="display: none; margin: 8px 0;">
+        <div class="form-row">
+          <input type="text" id="input-edit-title" class="form-input" placeholder="输入真实片名 (如: The Thicket)">
+          <button class="btn btn-primary btn-sm" id="btn-confirm-title" style="white-space: nowrap;">⚡ 确认并一键加载</button>
+        </div>
+      </div>
+
+      <div class="media-details" id="media-details">
+        <div class="detail-row">
+          <span class="detail-label">Status:</span>
+          <span class="detail-value" id="sub-status">Ready to auto-search</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Playback:</span>
+          <span class="detail-value" id="video-playback-time">--:-- / --:--</span>
+        </div>
+      </div>
+      <div class="media-actions" style="margin-top: 10px;">
+        <button class="btn btn-primary btn-sm btn-block" id="btn-trigger-auto-search">⚡ 确认片名并自动加载字幕</button>
+      </div>
+    </section>
+
+    <!-- Reload prompt when disconnected -->
+    <div class="reload-prompt" id="reload-prompt" style="display: none;">
+      <div class="reload-prompt-text">
+        <strong>⚠️ 尚未连接到流媒体播放页面</strong>
+        <span>支持 Netflix, Prime Video, Crave, Disney+, Max, YouTube, Apple TV+ 等</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="btn-reload-netflix" style="margin-top: 6px; width: 100%;">🔄 点击刷新页面</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="sync" id="tab-btn-sync">同步</button>
+      <button class="nav-tab" data-tab="style" id="tab-btn-style">外观/双语</button>
+      <button class="nav-tab" data-tab="search" id="tab-btn-search">搜索</button>
+      <button class="nav-tab" data-tab="local" id="tab-btn-local">本地</button>
+      <button class="nav-tab" data-tab="settings" id="tab-btn-settings">设置</button>
+    </nav>
+
+    <!-- Tab Content -->
+    <main class="tab-content">
+      <!-- 1. Offset Sync Tab (Default & Most Used) -->
+      <div class="tab-pane active" id="pane-sync">
+        <div class="offset-display-card">
+          <span class="offset-label">ACTIVE SUBTITLE OFFSET</span>
+          <div class="offset-value" id="offset-display-text">+0.0 s</div>
+        </div>
+
+        <div class="offset-controls-grid">
+          <button class="btn-step" id="btn-step-minus-1">-1.0 s</button>
+          <button class="btn-step" id="btn-step-minus-01">-0.1 s</button>
+          <button class="btn-step btn-step-reset" id="btn-step-reset">Reset (0.0s)</button>
+          <button class="btn-step" id="btn-step-plus-01">+0.1 s</button>
+          <button class="btn-step" id="btn-step-plus-1">+1.0 s</button>
+        </div>
+
+        <div class="shortcut-legend">
+          <div class="legend-title">Keyboard Shortcuts (In Netflix / Prime / Crave)</div>
+          <div class="legend-item">
+            <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd>
+            <span>Fine tune ±0.1s</span>
+          </div>
+          <div class="legend-item">
+            <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>←</kbd> / <kbd>→</kbd>
+            <span>Coarse tune ±1.0s</span>
+          </div>
+          <div class="legend-item">
+            <kbd>Alt</kbd> + <kbd>Q</kbd>
+            <span>Toggle subtitle display</span>
+          </div>
+        </div>
+
+        <!-- Native Caption Smart Calibrator (Prime Video, Crave, Hulu ad auto-sync) -->
+        <div class="calibrator-card" style="margin-top: 14px; padding: 12px; background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 12px; font-weight: 600; color: #00f2fe; display: flex; align-items: center; gap: 5px;">
+              🎯 广告插播时间轴智能校准
+            </span>
+            <span id="calibrator-badge" style="font-size: 10px; background: rgba(0,242,254,0.15); color: #00f2fe; padding: 2px 6px; border-radius: 4px;">自动监控中</span>
+          </div>
+          <p style="font-size: 11px; color: var(--text-secondary); margin: 0 0 10px 0; line-height: 1.4;">
+            Prime Video、Crave 等插播广告会导致时间轴滞后？只需在视频播放器开启自带字幕，插件即会自动检测台词秒级校准；也可点击下方一键手动校准。
+          </p>
+          <button class="btn btn-secondary btn-sm btn-block" id="btn-calibrate-native" style="border-color: rgba(0, 242, 254, 0.4); color: #fff;">
+            🎯 捕获当前自带字幕并校准时间轴
+          </button>
+          <div id="calibration-result" style="font-size: 11px; margin-top: 6px; padding: 6px 8px; border-radius: 4px; display: none; line-height: 1.4;"></div>
+        </div>
+      </div>
+
+      <!-- 2. Style & Appearance Tab -->
+      <div class="tab-pane" id="pane-style">
+        <!-- Live Preview Container -->
+        <div class="preview-card">
+          <div class="preview-header">
+            <span class="preview-tag">实时预览 (LIVE PREVIEW)</span>
+            <span class="preview-mode-tag" id="preview-mode-indicator">中英双语</span>
+          </div>
+          <div class="preview-stage" id="preview-stage">
+            <div class="preview-sub-box preset-pill" id="preview-sub-box">
+              <div class="preview-sub-primary" id="preview-primary">你好，警长在哪里？</div>
+              <div class="preview-sub-secondary" id="preview-secondary">Hello, where is the sheriff?</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. Display Mode (Bilingual / Chinese / English) -->
+        <div class="settings-group">
+          <label class="settings-label">字幕显示模式</label>
+          <div class="segmented-control" id="control-display-mode">
+            <button class="segment-btn active" data-val="bilingual_zh_en">中 / 英双语</button>
+            <button class="segment-btn" data-val="target_only">仅中文字幕</button>
+            <button class="segment-btn" data-val="bilingual_en_zh">英 / 中双语</button>
+          </div>
+        </div>
+
+        <!-- 2. Font Size Slider -->
+        <div class="settings-group">
+          <div class="slider-header">
+            <label class="settings-label">字体大小</label>
+            <span class="slider-val" id="val-font-size">28 px</span>
+          </div>
+          <input type="range" id="slider-font-size" class="form-range" min="18" max="48" step="1" value="28">
+        </div>
+
+        <!-- 3. Vertical Position & Bottom Offset -->
+        <div class="settings-group">
+          <label class="settings-label">字幕垂直位置</label>
+          <div class="segmented-control" id="control-position">
+            <button class="segment-btn active" data-val="bottom">底部 (Bottom)</button>
+            <button class="segment-btn" data-val="middle">居中 (Middle)</button>
+            <button class="segment-btn" data-val="top">顶部 (Top)</button>
+          </div>
+          <div class="slider-header" style="margin-top: 8px;">
+            <span style="font-size: 11px; color: var(--text-secondary);">底部边距微调</span>
+            <span class="slider-val" id="val-bottom-offset">8 %</span>
+          </div>
+          <input type="range" id="slider-bottom-offset" class="form-range" min="4" max="25" step="1" value="8">
+        </div>
+
+        <!-- 4. Text Color Swatches -->
+        <div class="settings-group">
+          <label class="settings-label">字体颜色</label>
+          <div class="color-swatches" id="control-text-color">
+            <button class="color-btn active" data-color="#ffffff" style="background: #ffffff;" title="纯白"></button>
+            <button class="color-btn" data-color="#ffe066" style="background: #ffe066;" title="影院金黄"></button>
+            <button class="color-btn" data-color="#4fc3f7" style="background: #4fc3f7;" title="极光浅蓝"></button>
+            <button class="color-btn" data-color="#a7f3d0" style="background: #a7f3d0;" title="薄荷淡绿"></button>
+          </div>
+        </div>
+
+        <!-- 5. Style Preset -->
+        <div class="settings-group">
+          <label class="settings-label">背景风格</label>
+          <div class="segmented-control" id="control-style-preset">
+            <button class="segment-btn active" data-val="pill">胶囊黑底</button>
+            <button class="segment-btn" data-val="outline">立体黑边</button>
+            <button class="segment-btn" data-val="cinema">经典黑框</button>
+          </div>
+        </div>
+
+        <!-- 6. Font Family -->
+        <div class="settings-group">
+          <label class="settings-label">字体选择</label>
+          <select id="select-font-family" class="form-select">
+            <option value="sans-serif">现代黑体 (PingFang / YaHei / Sans)</option>
+            <option value="serif">经典宋体 (Songti / Noto Serif)</option>
+            <option value="rounded">柔和圆体 (Hiragino / Rounded)</option>
+            <option value="monospace">经典等宽 (Monospace)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 2. Subtitle Search Tab -->
+      <div class="tab-pane" id="pane-search">
+        <div class="search-form">
+          <div class="form-group">
+            <input type="text" id="search-title" class="form-input" placeholder="Title (e.g. Stranger Things)">
+          </div>
+          <div class="form-row">
+            <select id="search-language" class="form-select">
+              <option value="zh-CN">Chinese (Simplified)</option>
+              <option value="zh-TW">Chinese (Traditional)</option>
+              <option value="en">English</option>
+            </select>
+            <button class="btn btn-primary" id="btn-search-subdl">Search</button>
+          </div>
+        </div>
+
+        <div class="search-results-container" id="search-results-container">
+          <div class="empty-state" id="search-empty-state">
+            <span>Enter title and click Search to query online subtitles.</span>
+          </div>
+          <div class="results-list" id="search-results-list" style="display: none;"></div>
+        </div>
+
+        <!-- 1-Click External Search Section -->
+        <div class="external-search-section">
+          <div class="external-search-header">🌐 外部字幕站一键直达检索：</div>
+          <div class="external-links-grid">
+            <button class="ext-link-btn" data-site="zimuku">字幕库 (Zimuku)</button>
+            <button class="ext-link-btn" data-site="subhd">SubHD</button>
+            <button class="ext-link-btn" data-site="assrt">伪射手网 (ASSRT)</button>
+            <button class="ext-link-btn" data-site="subdl">SubDL 官网</button>
+            <button class="ext-link-btn" data-site="yts">YTS Subtitles</button>
+          </div>
+          <div class="external-hint">💡 下载 .srt/.vtt 文件后直接切到【Manual File】拖入即可秒播</div>
+        </div>
+      </div>
+
+      <!-- 3. Local File Upload Tab (Fallback) -->
+      <div class="tab-pane" id="pane-local">
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon">📁</div>
+          <div class="drop-prompt">
+            <strong>Drop .SRT or .VTT file here</strong>
+            <span>or click to browse from computer</span>
+          </div>
+          <input type="file" id="file-input" accept=".srt,.vtt,text/plain" style="display: none;">
+        </div>
+
+        <div class="action-buttons-group">
+          <button class="btn btn-secondary" id="btn-browse-file">Browse File</button>
+          <button class="btn btn-outline" id="btn-clear-subtitle">Clear Current</button>
+        </div>
+
+        <div class="quick-guide">
+          <span class="guide-bullet">💡</span>
+          <span>Manual backup: load any local subtitle file when automated online search is not desired.</span>
+        </div>
+      </div>
+
+      <!-- 4. Settings Tab -->
+      <div class="tab-pane" id="pane-settings">
+        <div class="settings-group toggles-group">
+          <label class="toggle-row">
+            <span style="font-weight: 600;">启用字幕插件 (总开关)</span>
+            <input type="checkbox" id="setting-master-enabled" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+
+        <div class="settings-group toggles-group">
+          <label class="toggle-row">
+            <span>播放时全自动寻找字幕</span>
+            <input type="checkbox" id="setting-auto-search" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+
+        <div class="settings-group toggles-group">
+          <label class="toggle-row">
+            <span>Remember per Episode (记忆剧集偏好)</span>
+            <input type="checkbox" id="setting-remember" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+
+        <div class="settings-group toggles-group">
+          <label class="toggle-row">
+            <span>自动校准广告时间轴 (匹配自带字幕)</span>
+            <input type="checkbox" id="setting-auto-calibrate-native" checked>
+            <span class="toggle-switch"></span>
+          </label>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; padding: 0 4px; line-height: 1.4;">
+            解决 Prime Video、Crave、Hulu 等广告插播或切片引起的时间轴错位，实时对比自带原生字幕自动矫正。
+          </div>
+        </div>
+
+        <!-- Target Language Selector -->
+        <div class="settings-group">
+          <label class="settings-label" for="setting-target-language">目标翻译语言 (Target Language)</label>
+          <select id="setting-target-language" class="form-select" style="width: 100%; padding: 8px 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff; font-size: 13px;">
+            <option value="zh-CN" selected>简体中文 (Chinese Simplified) - 默认</option>
+            <option value="zh-TW">繁體中文 (Chinese Traditional)</option>
+            <option value="en">English (英语)</option>
+            <option value="ja">日本語 (Japanese)</option>
+            <option value="ko">한국어 (Korean)</option>
+            <option value="es">Español (Spanish)</option>
+            <option value="fr">Français (French)</option>
+            <option value="de">Deutsch (German)</option>
+            <option value="ru">Русский (Russian)</option>
+            <option value="it">Italiano (Italian)</option>
+            <option value="pt">Português (Portuguese)</option>
+          </select>
+          <div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px; line-height: 1.4;">
+            ⚡ <strong>自动翻译规则：</strong>默认先下载指定目标语言（如中文）字幕；若无目标语言字幕，将全自动抓取视频原语言（英语/日语/韩语/法语等）并实时翻译为目标语言。
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <label class="settings-label" for="setting-subdl-key">
+            SubDL API Key (选填)
+            <a href="https://subdl.com/api-doc" target="_blank" class="help-link">(获取免费 Key)</a>
+          </label>
+          <input type="password" id="setting-subdl-key" class="form-input" placeholder="输入 SubDL API Key">
+        </div>
+
+        <div class="settings-group">
+          <label class="settings-label" for="setting-opensubtitles-key">
+            OpenSubtitles API Key (选填)
+            <a href="https://www.opensubtitles.com" target="_blank" class="help-link">(官网)</a>
+          </label>
+          <input type="password" id="setting-opensubtitles-key" class="form-input" placeholder="输入 OpenSubtitles API Key">
+        </div>
+
+        <div style="margin-top: 8px;">
+          <button class="btn btn-primary btn-sm btn-block" id="btn-save-api-key">🔍 测试并保存 API Key</button>
+          <div id="api-test-status" style="font-size: 11px; margin-top: 6px; padding: 6px; border-radius: 4px; display: none; line-height: 1.4;"></div>
+        </div>
+
+        <div style="margin-top: 12px; font-size: 11px; color: var(--text-secondary); line-height: 1.5; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+          💡 <strong>免 Key 畅享说明：</strong><br>
+          本插件已内置免费无需 Key 的公共字幕库（YTS）和谷歌自动翻译，即使<strong>不填任何 API Key</strong>，系统也会全自动抓取高精原版字幕并 2 秒翻译为中文/双语！
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer Toast -->
+    <div class="popup-toast" id="popup-toast"></div>
+  </div>
+
+  <script src="../storage/storage.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

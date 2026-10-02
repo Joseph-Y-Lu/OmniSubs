@@ -1,0 +1,121 @@
+{
+  "manifest_version": 3,
+  "name": "OmniSubs - Universal Streaming Subtitles & AI Translator",
+  "version": "0.2.0",
+  "description": "Universal subtitle overlay & AI translation for Netflix, Prime Video, Crave, Disney+, Max, YouTube, Apple TV+ & more. Auto-detects original languages and translates to Chinese or any designated language without touching DRM.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "*://*.netflix.com/*",
+    "*://*.primevideo.com/*",
+    "*://*.amazon.com/*",
+    "*://*.amazon.co.uk/*",
+    "*://*.amazon.de/*",
+    "*://*.amazon.co.jp/*",
+    "*://*.amazon.ca/*",
+    "*://*.amazon.fr/*",
+    "*://*.amazon.es/*",
+    "*://*.amazon.it/*",
+    "*://*.amazon.com.au/*",
+    "*://*.crave.ca/*",
+    "*://*.disneyplus.com/*",
+    "*://*.max.com/*",
+    "*://*.hbomax.com/*",
+    "*://*.tv.apple.com/*",
+    "*://*.hulu.com/*",
+    "*://*.youtube.com/*",
+    "*://*.paramountplus.com/*",
+    "*://*.peacocktv.com/*",
+    "*://*.crunchyroll.com/*",
+    "*://*.bilibili.com/*",
+    "https://api.subdl.com/*",
+    "https://dl.subdl.com/*",
+    "https://api.opensubtitles.com/*",
+    "https://translate.googleapis.com/*",
+    "https://*.yts-subs.com/*",
+    "https://yts-subs.com/*"
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.netflix.com/*"
+      ],
+      "js": [
+        "src/content/page-bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.netflix.com/*",
+        "*://*.primevideo.com/*",
+        "*://*.amazon.com/*",
+        "*://*.amazon.co.uk/*",
+        "*://*.amazon.de/*",
+        "*://*.amazon.co.jp/*",
+        "*://*.amazon.ca/*",
+        "*://*.amazon.fr/*",
+        "*://*.amazon.es/*",
+        "*://*.amazon.it/*",
+        "*://*.amazon.com.au/*",
+        "*://*.crave.ca/*",
+        "*://*.disneyplus.com/*",
+        "*://*.max.com/*",
+        "*://*.hbomax.com/*",
+        "*://*.tv.apple.com/*",
+        "*://*.hulu.com/*",
+        "*://*.youtube.com/*",
+        "*://*.paramountplus.com/*",
+        "*://*.peacocktv.com/*",
+        "*://*.crunchyroll.com/*",
+        "*://*.bilibili.com/*"
+      ],
+      "js": [
+        "src/storage/storage.js",
+        "src/subtitle/srt-parser.js",
+        "src/subtitle/vtt-parser.js",
+        "src/subtitle/subtitle-engine.js",
+        "src/subtitle/subtitle-ranking.js",
+        "src/subtitle/subtitle-translator.js",
+        "src/subtitle/native-calibrator.js",
+        "src/content/netflix-detector.js",
+        "src/content/video-controller.js",
+        "src/content/subtitle-overlay.js",
+        "src/content/content.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/page-bridge.js"
+      ],
+      "matches": [
+        "*://*.netflix.com/*"
+      ]
+    }
+  ]
+}

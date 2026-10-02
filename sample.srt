@@ -1,0 +1,20 @@
+1
+00:00:02,000 --> 00:00:05,500
+[Netflix Subtitle Overlay]
+External subtitle successfully loaded!
+
+2
+00:00:06,000 --> 00:00:09,200
+Sync is driven directly by video.currentTime.
+
+3
+00:00:10,000 --> 00:00:14,000
+Try pressing Alt + Left/Right to calibrate offset by 0.1s!
+
+4
+00:00:15,000 --> 00:00:19,500
+Or Shift + Alt + Left/Right for 1.0s coarse adjustment.
+
+5
+00:00:20,000 --> 00:00:25,000
+Full screen and control bar hover are automatically supported.

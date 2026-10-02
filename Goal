@@ -1,0 +1,21 @@
+# Netflix External Subtitle Overlay - Project Specification & Implementation Status
+
+## 1. Project Goal
+Develop a Chrome / Edge browser extension that allows users to **automatically load and synchronize external subtitles** (SRT, WebVTT, and legal subtitle APIs like SubDL/OpenSubtitles) when playing videos on Netflix web player, especially for subtitle languages Netflix does not officially provide.
+
+### Core Principles
+- **No Video Downloading or Decryption**: Never touch Netflix video streams, DRM, or encrypted media keys.
+- **Safe Video Clock**: Read only the standard `<video>` element's `currentTime`, `duration`, `paused`, and `playbackRate`.
+- **Independent Overlay**: Render subtitles as an isolated HTML/Shadow DOM overlay positioned above the video player.
+- **Zero-Friction Automation**: Automatic media recognition, automatic online search, automatic fallback translation, and automatic episode switching.
+- **Decoupled Architecture**: Subtitle engine, metadata detection, subtitle providers, and UI are modular and independent.
+
+---
+
+## 2. Fully Automated Workflow (免去找字幕步骤)
+1. **Play**: User clicks play on Netflix.
+2. **Detect**: `NetflixMetadataAdapter` identifies title, season, episode.
+3. **Auto-Search**: `ProviderManager` automatically searches for Chinese subtitles online.
+4. **Auto-Translate Fallback**: If target language not found, fetches English subtitles and automatically translates the entire file into Chinese / Bilingual with 100% preserved timestamps.
+5. **Auto-Mount**: Subtitle cues are automatically loaded into `SubtitleEngine` and displayed on the Shadow DOM overlay.
+6. **Auto-Next Episode**: When moving to the next episode, old cues are cleared and new episode subtitles are fetched automatically without user interaction.

@@ -1,0 +1,26 @@
+{
+  "name": "omnisubs-streaming-subtitles",
+  "version": "0.2.0",
+  "description": "Universal subtitle overlay & AI translation for Netflix, Prime Video, Crave, Disney+, Max, YouTube, Apple TV+ and all major streaming platforms.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "build:zip": "mkdir -p dist && rm -f dist/omnisubs-extension.zip && zip -r dist/omnisubs-extension.zip manifest.json icons/ src/"
+  },
+  "keywords": [
+    "subtitles",
+    "translation",
+    "netflix",
+    "primevideo",
+    "crave",
+    "disneyplus",
+    "hbomax",
+    "youtube",
+    "srt",
+    "vtt",
+    "chrome-extension",
+    "bilingual"
+  ],
+  "author": "",
+  "license": "MIT"
+}
